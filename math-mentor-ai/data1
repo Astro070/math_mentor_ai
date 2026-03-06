@@ -1,0 +1,25 @@
+import re
+
+def parse_question(question):
+
+    topic = "unknown"
+
+    if "derivative" in question.lower():
+        topic = "calculus"
+
+    elif "integrate" in question.lower():
+        topic = "calculus"
+
+    elif "probability" in question.lower():
+        topic = "probability"
+
+    variables = re.findall(r"[a-zA-Z]", question)
+
+    parsed_data = {
+        "problem_text": question,
+        "topic": topic,
+        "variables": list(set(variables)),
+        "needs_clarification": False
+    }
+
+    return parsed_data
