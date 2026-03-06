@@ -1,1 +1,8 @@
-
+streamlit
+sympy
+sentence-transformers
+faiss-cpu
+easyocr
+openai-whisper
+pillow
+numpy
