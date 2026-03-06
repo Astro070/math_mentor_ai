@@ -1,45 +1,72 @@
 # retriever.py
 
-import os  # used for file operations
-import numpy as np  # numeric operations
-import faiss  # vector search library
-from sentence_transformers import SentenceTransformer  # embedding model
+import os
+import numpy as np
+import faiss
+from sentence_transformers import SentenceTransformer
+
 
 # Load embedding model
-model = SentenceTransformer("all-MiniLM-L6-v2")  # lightweight embedding model
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
-documents = []  # list to store knowledge documents
+documents = []
+sources = []
 
-# Read all text files from the data folder
 data_folder = "data"
 
-for file in os.listdir(data_folder):  # loop through files
-    if file.endswith(".txt"):  # only read txt files
-        with open(os.path.join(data_folder, file), "r", encoding="utf-8") as f:
-            text = f.read()
-            documents.append(text)  # store document
+# Check if data folder exists
+if os.path.exists(data_folder):
 
-# Convert documents to embeddings
-doc_embeddings = model.encode(documents)
+    for file in os.listdir(data_folder):
 
-# Create FAISS index
-dimension = doc_embeddings.shape[1]
-index = faiss.IndexFlatL2(dimension)
+        if file.endswith(".txt"):
 
-# Add embeddings to index
-index.add(np.array(doc_embeddings))
+            file_path = os.path.join(data_folder, file)
+
+            with open(file_path, "r", encoding="utf-8") as f:
+
+                text = f.read()
+
+                documents.append(text)
+                sources.append(file)
+
+else:
+    print("WARNING: data folder not found")
 
 
-# retriever.py
+# If documents exist → create FAISS index
+if len(documents) > 0:
 
+    doc_embeddings = model.encode(documents)
+
+    dimension = doc_embeddings.shape[1]
+
+    index = faiss.IndexFlatL2(dimension)
+
+    index.add(np.array(doc_embeddings))
+
+else:
+
+    index = None
+
+
+# Retrieval function
 def retrieve_context(query):
 
-    # Example retrieved document
-    context = "The derivative rule d/dx (x^n) = n*x^(n-1)"
+    # If no documents available
+    if index is None:
+        return {
+            "context": "No knowledge documents found.",
+            "source": "none"
+        }
 
-    source = "calculus_rules.txt"
+    query_embedding = model.encode([query])
+
+    D, I = index.search(np.array(query_embedding), k=1)
+
+    doc_index = I[0][0]
 
     return {
-        "context": context,
-        "source": source
+        "context": documents[doc_index],
+        "source": sources[doc_index]
     }
